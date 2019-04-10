@@ -16,6 +16,12 @@ import org.springframework.stereotype.Repository;
 
 import com.ongres.dvdrentalstore.exception.DAOException;
 
+/**
+ * This class deals with database access related to renting DVDs.
+ * 
+ * @author rodrigodesalazar
+ *
+ */
 @Repository
 public class RentalDAO
 {

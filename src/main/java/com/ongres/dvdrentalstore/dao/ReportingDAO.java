@@ -19,6 +19,12 @@ import com.ongres.dvdrentalstore.dto.Film;
 import com.ongres.dvdrentalstore.dto.OverdueRental;
 import com.ongres.dvdrentalstore.exception.DAOException;
 
+/**
+ * This class deals with database access related to generating store reports.
+ * 
+ * @author rodrigodesalazar
+ *
+ */
 @Repository
 public class ReportingDAO
 {
