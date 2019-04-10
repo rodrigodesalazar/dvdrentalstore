@@ -3,52 +3,104 @@ package com.ongres.dvdrentalstore.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ongres.dvdrentalstore.dao.RentalDAO;
-import com.ongres.dvdrentalstore.exception.NotAvailableException;
+import com.ongres.dvdrentalstore.exception.DAOException;
+import com.ongres.dvdrentalstore.exception.ServiceException;
 
 @Service
 public class RentalService implements IRentalService
 {
+	private static final Logger logger = LoggerFactory.getLogger(RentalService.class);
+	
+	@Value("${warning.notAvailable}")
+	private String warningNotAvailable;
+	
+	@Value("${error.incorrectParameters}")
+	private String incorrectParameters;
+	
 	@Autowired
 	private RentalDAO rentalDAO;
 
 	@Override
 	@Transactional
-	public Boolean rentDVD(Integer customerID, String staffName, String title) throws NotAvailableException
+	public void rentDVD(Integer customerID, String staffName, String title) throws ServiceException
 	{
-		List<Integer> inventoryIDs = rentalDAO.getInventoryIDs(customerID, title);
+		logger.info("Enter: rentDVD");
+		logger.info("customerID: " + customerID);
+		logger.info("staffName: " + staffName);
+		logger.info("title: " + title);
 		
-		Optional<Integer> inventoryID = inventoryIDs.stream().filter(x -> rentalDAO.isAvailable(x)).findFirst();
-		
-		if (inventoryID.isPresent())
+		if (customerID == null || staffName == null || title == null)
 		{
-			Integer rentalID = rentalDAO.rentDVD(customerID, staffName, inventoryID.get());
-			
-			Double customerBalance = rentalDAO.getCustomerBalance(customerID);
-			
-			rentalDAO.registerBalance(customerID, staffName, rentalID, customerBalance);		
-		}
-		else
-		{
-			throw new NotAvailableException();
+			logger.error(incorrectParameters);
+			throw new ServiceException(incorrectParameters);
 		}
 		
+		List<Integer> inventoryIDs;
 		
-		return null;
+		try 
+		{
+			inventoryIDs = rentalDAO.getInventoryIDs(customerID, title);
+
+
+			Optional<Integer> inventoryID = inventoryIDs.stream().filter(x -> {
+					try { return rentalDAO.isAvailable(x); } 
+					catch (DAOException e) { throw new RuntimeException(e.getMessage()); }
+				}).findFirst();
+
+			if (inventoryID.isPresent())
+			{
+				Integer rentalID = rentalDAO.registerRental(customerID, staffName, inventoryID.get());
+
+				Double customerBalance = rentalDAO.getCustomerBalance(customerID);
+
+				rentalDAO.registerPayment(customerID, staffName, rentalID, customerBalance);		
+			}
+			else
+			{
+				logger.warn(warningNotAvailable);
+				throw new ServiceException(warningNotAvailable);
+			}
+
+		} 
+		catch (DAOException e) 
+		{
+			throw new ServiceException(e.getMessage());
+		}
+		
+		logger.info("Exit: rentDVD");
 	}
 
 	@Override
 	@Transactional
-	public Boolean returnDVD(Integer customerID, String title)
+	public void returnDVD(Integer customerID, String title) throws ServiceException
 	{
+		logger.info("Enter: returnDVD");
+		logger.info("customerID: " + customerID);
+		logger.info("title: " + title);
 		
-		rentalDAO.returnDVD(customerID, title);
+		if (customerID == null || title == null)
+		{
+			logger.error(incorrectParameters);
+			throw new ServiceException(incorrectParameters);
+		}
 		
-		return null;
+		try 
+		{
+			rentalDAO.updateRental(customerID, title);
+		}
+		catch (DAOException e) 
+		{
+			throw new ServiceException(e.getMessage());
+		}
+		
+		logger.info("Exit: returnDVD");
 	}
-
 }

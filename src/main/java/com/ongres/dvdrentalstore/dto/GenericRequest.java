@@ -1,9 +1,8 @@
 package com.ongres.dvdrentalstore.dto;
 
-public class GeneralRequest
+public class GenericRequest
 {
 	private Integer customerID;
-	
 	
 	private String title;
 
@@ -17,8 +16,6 @@ public class GeneralRequest
 		this.customerID = customerID;
 	}
 
-	
-
 	public String getTitle()
 	{
 		return title;
@@ -28,6 +25,4 @@ public class GeneralRequest
 	{
 		this.title = title;
 	}
-	
-	
 }

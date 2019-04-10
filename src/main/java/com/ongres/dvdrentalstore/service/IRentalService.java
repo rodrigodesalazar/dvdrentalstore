@@ -1,10 +1,10 @@
 package com.ongres.dvdrentalstore.service;
 
-import com.ongres.dvdrentalstore.exception.NotAvailableException;
+import com.ongres.dvdrentalstore.exception.ServiceException;
 
 public interface IRentalService
 {
-	Boolean rentDVD(Integer customerID, String staffName, String title) throws NotAvailableException;
+	void rentDVD(Integer customerID, String staffName, String title) throws ServiceException;
 	
-	Boolean returnDVD(Integer customerID, String title);
+	void returnDVD(Integer customerID, String title) throws ServiceException;
 }

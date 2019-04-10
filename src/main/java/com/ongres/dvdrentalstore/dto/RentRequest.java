@@ -1,6 +1,6 @@
 package com.ongres.dvdrentalstore.dto;
 
-public class RentRequest extends GeneralRequest
+public class RentRequest extends GenericRequest
 {
 	private String staffName;
 	

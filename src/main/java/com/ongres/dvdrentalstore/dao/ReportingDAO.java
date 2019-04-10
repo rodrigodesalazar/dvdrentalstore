@@ -8,16 +8,22 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import com.ongres.dvdrentalstore.dto.Actor;
 import com.ongres.dvdrentalstore.dto.Film;
 import com.ongres.dvdrentalstore.dto.OverdueRental;
+import com.ongres.dvdrentalstore.exception.DAOException;
 
 @Repository
 public class ReportingDAO
 {
+	private static final Logger logger = LoggerFactory.getLogger(ReportingDAO.class);
+	
 	@Value("${database.username}")
 	private String username;
 	
@@ -27,12 +33,19 @@ public class ReportingDAO
 	@Value("${database.url}")
 	private String url;
 
-	public Integer clientsByCountry(String country, String city)
+	public Integer getClientsByCountry(String country, String city) throws DAOException
 	{
+		logger.info("Enter: getClientsByCountry");
+		logger.info("country: " + country);
+		logger.info("city: " + city);
+		
 		Connection connection = null;
 		Integer numberOfClients = null;
+		
 		try
 		{
+			connection = DriverManager.getConnection(url, username, password);
+			
 			StringBuilder query = new StringBuilder(
 					"SELECT COUNT(*) AS clients FROM customer AS c "
 					+ "JOIN address AS a USING (address_id) "
@@ -42,8 +55,6 @@ public class ReportingDAO
 			{
 				query.append(" and ci.city=?");
 			}
-			
-			connection = DriverManager.getConnection(url, username, password);
 			
 			PreparedStatement statement = connection.prepareStatement(query.toString());
 			statement.setString(1, country);
@@ -60,8 +71,8 @@ public class ReportingDAO
 		} 
 		catch (SQLException e)
 		{
-			
-			e.printStackTrace();
+			logger.error(ExceptionUtils.getStackTrace(e));
+			throw new DAOException(e.getMessage());
 		}
 		finally
 		{
@@ -71,22 +82,29 @@ public class ReportingDAO
 			}
 			catch (SQLException e)
 			{
-				
-				e.printStackTrace();
+				logger.error(ExceptionUtils.getStackTrace(e));
+				throw new DAOException(e.getMessage());
 			}
 		}
 
+		logger.info("Exit: getClientsByCountry");
+		logger.info("numberOfClients: " + numberOfClients);
 		return numberOfClients;
 	}
 	
-	public List<Film> filmsByActor(String actor)
+	public List<Film> getFilmsByActor(String actor) throws DAOException
 	{
+		logger.info("Enter: getFilmsByActor");
+		logger.info("actor: " + actor);
+		
 		Connection connection = null;
 		List<Film> filmsByActor = new ArrayList<Film>();
 		
 		try
 		{
-			StringBuilder query = new StringBuilder(
+			connection = DriverManager.getConnection(url, username, password);
+			
+			String query = new String(
 					"SELECT a.first_name AS firstname, a.last_name AS lastname, f.title AS title, f.description AS description, c.name AS categoryname "
 					+ "FROM actor AS a "
 					+ "JOIN film_actor AS fa USING (actor_id) "
@@ -97,15 +115,12 @@ public class ReportingDAO
 			
 			StringBuilder actorWildcard = new StringBuilder("%" + actor.toUpperCase() + "%");
 			
-			connection = DriverManager.getConnection(url, username, password);
-			
-			PreparedStatement statement = connection.prepareStatement(query.toString());
+			PreparedStatement statement = connection.prepareStatement(query);
 			statement.setString(1, actorWildcard.toString());
 			statement.setString(2, actorWildcard.toString());
 			statement.setString(3, actorWildcard.toString());
 						
 			ResultSet resultSet = statement.executeQuery();
-			
 			while (resultSet.next())
 			{
 				Film filmByActor = new Film();
@@ -126,8 +141,8 @@ public class ReportingDAO
 		} 
 		catch (SQLException e)
 		{
-			
-			e.printStackTrace();
+			logger.error(ExceptionUtils.getStackTrace(e));
+			throw new DAOException(e.getMessage());
 		}
 		finally
 		{
@@ -137,22 +152,28 @@ public class ReportingDAO
 			}
 			catch (SQLException e)
 			{
-				
-				e.printStackTrace();
+				logger.error(ExceptionUtils.getStackTrace(e));
+				throw new DAOException(e.getMessage());
 			}
 		}
 
+		logger.info("Exit: getFilmsByActor");
+		logger.info("filmsByActor: " + filmsByActor);
 		return filmsByActor;
 	}
 
-	public List<OverdueRental> overdueRentals()
+	public List<OverdueRental> getOverdueRentals() throws DAOException
 	{
+		logger.info("Enter: getOverdueRentals");
+		
 		Connection connection = null;
 		List<OverdueRental> overdueRentals = new ArrayList<OverdueRental>();
 		
 		try
 		{
-			StringBuilder query = new StringBuilder(
+			connection = DriverManager.getConnection(url, username, password);
+			
+			String query = new String(
 					"SELECT c.last_name||', '||c.first_name AS customer, a.phone AS phone, f.title AS title "
 					+ "FROM rental AS r "
 					+ "JOIN customer AS c USING (customer_id) "
@@ -162,12 +183,9 @@ public class ReportingDAO
 					+ "WHERE r.return_date IS NULL "
 					+ "AND r.rental_date + CAST(f.rental_duration||' DAYS' AS INTERVAL) < NOW()");
 			
-			connection = DriverManager.getConnection(url, username, password);
-			
-			PreparedStatement statement = connection.prepareStatement(query.toString());
+			PreparedStatement statement = connection.prepareStatement(query);
 						
-			ResultSet resultSet = statement.executeQuery();
-			
+			ResultSet resultSet = statement.executeQuery();	
 			while (resultSet.next())
 			{
 				OverdueRental overdueRental = new OverdueRental();
@@ -183,8 +201,8 @@ public class ReportingDAO
 		} 
 		catch (SQLException e)
 		{
-			
-			e.printStackTrace();
+			logger.error(ExceptionUtils.getStackTrace(e));
+			throw new DAOException(e.getMessage());
 		}
 		finally
 		{
@@ -194,11 +212,13 @@ public class ReportingDAO
 			}
 			catch (SQLException e)
 			{
-				
-				e.printStackTrace();
+				logger.error(ExceptionUtils.getStackTrace(e));
+				throw new DAOException(e.getMessage());
 			}
 		}
-
+		
+		logger.info("Exit: getOverdueRentals");
+		logger.info("overdueRentals: " + overdueRentals);
 		return overdueRentals;
 	}
 }

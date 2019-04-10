@@ -1,88 +1,103 @@
 package com.ongres.dvdrentalstore.rest;
 
-import java.io.IOException;
-
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ongres.dvdrentalstore.dto.GenericRequest;
+import com.ongres.dvdrentalstore.dto.GenericResponse;
 import com.ongres.dvdrentalstore.dto.RentRequest;
-import com.ongres.dvdrentalstore.dto.ReturnRequest;
-import com.ongres.dvdrentalstore.exception.NotAvailableException;
+import com.ongres.dvdrentalstore.exception.ServiceException;
 import com.ongres.dvdrentalstore.service.IRentalService;
 
 @RestController
 @RequestMapping(path = "/rental")
 public class DVDRentalController
 {
-
 	private static final Logger logger = LoggerFactory.getLogger(DVDRentalController.class);
 
+	@Value("${status.ok}")
+	private String statusOK;
+	
+	@Value("${status.error}")
+	private String statusError;
+	
+	@Value("${body.successfulRent}")
+	private String successfulRent;
+	
+	@Value("${body.successfulReturn}")
+	private String successfulReturn;
+	
 	@Autowired
 	private IRentalService rentalService;
 
 	@RequestMapping(path = "/rentDVD", method = RequestMethod.POST, consumes = "application/json")
-	public Boolean rentDVDPOST(@RequestBody String json)
+	public GenericResponse rentDVDPOST(@RequestBody RentRequest request)
 	{
-		logger.info("Recibido: " + json);
-		ObjectMapper mapper = new ObjectMapper();
-		RentRequest request = null;
-		try
-		{
-			request = mapper.readValue(json, RentRequest.class);
-		} catch (JsonParseException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JsonMappingException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		logger.info("Enter: rentDVDPOST");
+		logger.info("request: " + request);
+
+		GenericResponse response = new GenericResponse();
 		
 		try
+		{	
+			rentalService.rentDVD(request.getCustomerID(), request.getStaffName(), request.getTitle());
+			
+			response.setStatus(statusOK);
+			response.setBody(successfulRent);
+		} 
+		catch (ServiceException e)
 		{
-			 rentalService.rentDVD(request.getCustomerID(), request.getStaffName(), request.getTitle());
-		} catch (NotAvailableException e)
+			response.setStatus(statusError);
+			response.setBody(e.getMessage());
+		} 
+		catch (RuntimeException e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
+			logger.error(ExceptionUtils.getStackTrace(e));
+			response.setStatus(statusError);
+			response.setBody(e.getMessage());
+		} 
+		
+		logger.info("Exit: rentDVDPOST");
+		logger.info("response: " + response);
+		return response;
 	}
 
 	@RequestMapping(path = "/returnDVD", method = RequestMethod.POST, consumes = "application/json")
-	public Boolean returnDVDPOST(@RequestBody String json)
+	public GenericResponse returnDVDPOST(@RequestBody GenericRequest request)
 	{
-		ObjectMapper mapper = new ObjectMapper();
-		ReturnRequest request = null;
+		logger.info("Exit: returnDVDPOST");
+		logger.info("request: " + request);
+
+		GenericResponse response = new GenericResponse();
+		
 		try
 		{
-			request = mapper.readValue(json, ReturnRequest.class);
-		} catch (JsonParseException e)
+			rentalService.returnDVD(request.getCustomerID(), request.getTitle());
+			
+			response.setStatus(statusOK);
+			response.setBody(successfulReturn);
+		} 
+		catch (ServiceException e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JsonMappingException e)
+			response.setStatus(statusError);
+			response.setBody(e.getMessage());
+		} 
+		catch (RuntimeException e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return rentalService.returnDVD(request.getCustomerID(), request.getTitle());
+			logger.error(ExceptionUtils.getStackTrace(e));
+			response.setStatus(statusError);
+			response.setBody(e.getMessage());
+		} 
+		
+		logger.info("Exit: returnDVDPOST");
+		logger.info("response: " + response);
+		return response;
 	}
 }
