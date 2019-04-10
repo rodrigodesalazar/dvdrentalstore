@@ -14,4 +14,10 @@ public class RentRequest extends GenericRequest
 		this.staffName = staffName;
 	}
 
+	@Override
+	public String toString()
+	{
+		return "RentRequest [staffName=" + staffName + ", getCustomerID()=" + getCustomerID() + ", getTitle()=" + getTitle() + "]";
+	}
+
 }

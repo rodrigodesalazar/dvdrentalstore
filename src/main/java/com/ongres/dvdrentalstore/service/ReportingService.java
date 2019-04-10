@@ -10,11 +10,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.ongres.dvdrentalstore.dao.ReportingDAO;
+import com.ongres.dvdrentalstore.dto.ClientCount;
 import com.ongres.dvdrentalstore.dto.Film;
 import com.ongres.dvdrentalstore.dto.OverdueRental;
 import com.ongres.dvdrentalstore.exception.DAOException;
 import com.ongres.dvdrentalstore.exception.ServiceException;
 
+/**
+ * Service implementing the IReportingService interface.
+ * 
+ * @author rodrigodesalazar
+ *
+ */
 @Service
 public class ReportingService implements IReportingService
 {
@@ -23,18 +30,21 @@ public class ReportingService implements IReportingService
 	@Autowired
 	private ReportingDAO reportingDAO;
 
+	/* (non-Javadoc)
+	 * @see com.ongres.dvdrentalstore.service.IReportingService#clientsByCountry(java.lang.String, java.lang.String)
+	 */
 	@Override
-	public Integer clientsByCountry(String country, String city) throws ServiceException
+	public ClientCount clientsByCountry(String country, String city) throws ServiceException
 	{
 		logger.info("Enter: clientsByCountry");
 		logger.info("country: " + country);
 		logger.info("city: " + city);
 		
-		Integer numberOfClients = null;
+		ClientCount clientCount = new ClientCount();
 
 		try 
 		{
-			reportingDAO.getClientsByCountry(country, city);
+			clientCount.setNumberOfClients(reportingDAO.getClientsByCountry(country, city));
 		}
 		catch (DAOException e)
 		{
@@ -42,12 +52,15 @@ public class ReportingService implements IReportingService
 		}
 		
 		logger.info("Exit: clientsByCountry");
-		logger.info("numberOfClients: " + numberOfClients);
-		return numberOfClients;
+		logger.info("numberOfClients: " + clientCount);
+		return clientCount;
 				
 				
 	}
 
+	/* (non-Javadoc)
+	 * @see com.ongres.dvdrentalstore.service.IReportingService#filmsByActor(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public List<Film> filmsByActor(String actor, String category) throws ServiceException
 	{
@@ -76,6 +89,9 @@ public class ReportingService implements IReportingService
 		return filmsByActor;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.ongres.dvdrentalstore.service.IReportingService#overdueRentals()
+	 */
 	@Override
 	public List<OverdueRental> overdueRentals() throws ServiceException
 	{

@@ -16,6 +16,12 @@ import com.ongres.dvdrentalstore.dto.RentRequest;
 import com.ongres.dvdrentalstore.exception.ServiceException;
 import com.ongres.dvdrentalstore.service.IRentalService;
 
+/**
+ * This class contains REST services related to renting DVDs.
+ * 
+ * @author rodrigodesalazar
+ *
+ */
 @RestController
 @RequestMapping(path = "/rental")
 public class DVDRentalController
@@ -37,6 +43,12 @@ public class DVDRentalController
 	@Autowired
 	private IRentalService rentalService;
 
+	/**
+	 * Given a title, customer id and staff name, rent a DVD.
+	 * 
+	 * @param request contains the aforementioned data.
+	 * @return an Ok response if the rental is successful, Error otherwise.
+	 */
 	@RequestMapping(path = "/rentDVD", method = RequestMethod.POST, consumes = "application/json")
 	public GenericResponse rentDVDPOST(@RequestBody RentRequest request)
 	{
@@ -69,6 +81,12 @@ public class DVDRentalController
 		return response;
 	}
 
+	/**
+	 * Given a title and customer id return a DVD.
+	 * 
+	 * @param request contains the aforementioned data.
+	 * @return an Ok response if the return is successful, Error otherwise.
+	 */
 	@RequestMapping(path = "/returnDVD", method = RequestMethod.POST, consumes = "application/json")
 	public GenericResponse returnDVDPOST(@RequestBody GenericRequest request)
 	{

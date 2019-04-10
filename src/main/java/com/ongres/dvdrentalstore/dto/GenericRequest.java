@@ -25,4 +25,10 @@ public class GenericRequest
 	{
 		this.title = title;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "GenericRequest [customerID=" + customerID + ", title=" + title + "]";
+	}
 }

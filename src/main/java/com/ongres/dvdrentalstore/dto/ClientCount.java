@@ -4,8 +4,6 @@ public class ClientCount
 {
 	private Integer numberOfClients;
 
-	private String errorMessage;
-
 	public Integer getNumberOfClients()
 	{
 		return numberOfClients;
@@ -16,13 +14,9 @@ public class ClientCount
 		this.numberOfClients = numberOfClients;
 	}
 
-	public String getErrorMessage()
+	@Override
+	public String toString()
 	{
-		return errorMessage;
-	}
-
-	public void setErrorMessage(String errorMessage)
-	{
-		this.errorMessage = errorMessage;
+		return "ClientCount [numberOfClients=" + numberOfClients + "]";
 	}
 }

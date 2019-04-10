@@ -14,6 +14,12 @@ import com.ongres.dvdrentalstore.dto.GenericResponse;
 import com.ongres.dvdrentalstore.exception.ServiceException;
 import com.ongres.dvdrentalstore.service.IReportingService;
 
+/**
+ * This class contains REST services related to generating store reports.
+ * 
+ * @author rodrigodesalazar
+ *
+ */
 @RestController
 @RequestMapping(path = "/reporting")
 public class DVDReportingController
@@ -29,6 +35,14 @@ public class DVDReportingController
 	@Autowired
 	private IReportingService reportingService;
 
+	/**
+	 * Returns number of clients in a given country, and optionally city.
+	 * It is case insensitive, but it returns exact matches only.
+	 *  
+	 * @param country the country to search for.
+	 * @param city city in the country (optional).
+	 * @return the number of clients matching the country/city.
+	 */
 	@RequestMapping(path = "/clientsByCountry", method = RequestMethod.GET)
 	public GenericResponse clientsByCountryGET(@RequestParam(value = "country") String country, @RequestParam(value = "city", required = false) String city)
 	{
@@ -60,6 +74,14 @@ public class DVDReportingController
 		return response;
 	}
 
+	/**
+	 * Returns films matching given actor name.
+	 * The actor name is case insensitively matched against name, last name and the combination of both. 
+	 * 
+	 * @param actor the actor to look for.
+	 * @param category category to which the film belongs to (optional).
+	 * @return films matching given actor name.
+	 */
 	@RequestMapping(path = "/filmsByActor", method = RequestMethod.GET)
 	public GenericResponse filmsByActorGET(@RequestParam(value = "actor") String actor, @RequestParam(value = "category", required = false) String category)
 	{
@@ -91,6 +113,11 @@ public class DVDReportingController
 		return response;
 	}
 
+	/**
+	 * Returns a list of clients with overdue rentals.
+	 * 
+	 * @return clients with overdue rentals.
+	 */
 	@RequestMapping(path = "/overdueRentals", method = RequestMethod.GET)
 	public GenericResponse overdueRentalsGET()
 	{

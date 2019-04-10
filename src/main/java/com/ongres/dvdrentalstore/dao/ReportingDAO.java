@@ -33,6 +33,16 @@ public class ReportingDAO
 	@Value("${database.url}")
 	private String url;
 
+	/**
+	 * Returns number of clients in a given country, and optionally city.
+	 * It is case insensitive, but it returns exact matches only.
+	 * It would make no sense to count partial matches (to which country would each number belong to then?).
+	 * Keep an eye on performance.
+	 *  
+	 * @param country the country to search for.
+	 * @param city city in the country (optional).
+	 * @return the number of clients matching the country/city.
+	 */
 	public Integer getClientsByCountry(String country, String city) throws DAOException
 	{
 		logger.info("Enter: getClientsByCountry");
@@ -50,17 +60,17 @@ public class ReportingDAO
 					"SELECT COUNT(*) AS clients FROM customer AS c "
 					+ "JOIN address AS a USING (address_id) "
 					+ "JOIN city AS ci USING (city_id) "
-					+ "JOIN country AS co USING (country_id) WHERE co.country=?");
+					+ "JOIN country AS co USING (country_id) WHERE upper(co.country)=?");
 			if (city != null)
 			{
-				query.append(" and ci.city=?");
+				query.append(" and upper(ci.city)=?");
 			}
 			
 			PreparedStatement statement = connection.prepareStatement(query.toString());
-			statement.setString(1, country);
+			statement.setString(1, country.toUpperCase());
 			if (city != null)
 			{
-				statement.setString(2, city);
+				statement.setString(2, city.toUpperCase());
 			}
 			
 			ResultSet resultSet = statement.executeQuery();
@@ -92,6 +102,14 @@ public class ReportingDAO
 		return numberOfClients;
 	}
 	
+	/**
+	 * Returns films matching given actor name.
+	 * The actor name is case insensitively matched against name, last name and the combination of both.
+	 * Keep an eye on performance. 
+	 * 
+	 * @param actor the actor to look for.
+	 * @return films matching given actor name.
+	 */
 	public List<Film> getFilmsByActor(String actor) throws DAOException
 	{
 		logger.info("Enter: getFilmsByActor");
@@ -162,6 +180,11 @@ public class ReportingDAO
 		return filmsByActor;
 	}
 
+	/**
+	 * Returns a list of clients with overdue rentals.
+	 * 
+	 * @return clients with overdue rentals.
+	 */
 	public List<OverdueRental> getOverdueRentals() throws DAOException
 	{
 		logger.info("Enter: getOverdueRentals");

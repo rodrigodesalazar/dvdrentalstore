@@ -8,19 +8,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.ongres.dvdrentalstore.dao.RentalDAO;
 import com.ongres.dvdrentalstore.exception.DAOException;
 import com.ongres.dvdrentalstore.exception.ServiceException;
 
+/**
+ * Service implementing the IRentalService interface.
+ * 
+ * @author rodrigodesalazar
+ *
+ */
 @Service
 public class RentalService implements IRentalService
 {
 	private static final Logger logger = LoggerFactory.getLogger(RentalService.class);
 	
-	@Value("${warning.notAvailable}")
-	private String warningNotAvailable;
+	@Value("${error.notAvailable}")
+	private String notAvailable;
 	
 	@Value("${error.incorrectParameters}")
 	private String incorrectParameters;
@@ -28,8 +33,10 @@ public class RentalService implements IRentalService
 	@Autowired
 	private RentalDAO rentalDAO;
 
+	/* (non-Javadoc)
+	 * @see com.ongres.dvdrentalstore.service.IRentalService#rentDVD(java.lang.Integer, java.lang.String, java.lang.String)
+	 */
 	@Override
-	@Transactional
 	public void rentDVD(Integer customerID, String staffName, String title) throws ServiceException
 	{
 		logger.info("Enter: rentDVD");
@@ -47,8 +54,8 @@ public class RentalService implements IRentalService
 		
 		try 
 		{
+			// As there can be several copies of a film, we take the first one we find.
 			inventoryIDs = rentalDAO.getInventoryIDs(customerID, title);
-
 
 			Optional<Integer> inventoryID = inventoryIDs.stream().filter(x -> {
 					try { return rentalDAO.isAvailable(x); } 
@@ -57,16 +64,12 @@ public class RentalService implements IRentalService
 
 			if (inventoryID.isPresent())
 			{
-				Integer rentalID = rentalDAO.registerRental(customerID, staffName, inventoryID.get());
-
-				Double customerBalance = rentalDAO.getCustomerBalance(customerID);
-
-				rentalDAO.registerPayment(customerID, staffName, rentalID, customerBalance);		
+				rentalDAO.registerRentalAndPayment(customerID, staffName, inventoryID.get());
 			}
 			else
 			{
-				logger.warn(warningNotAvailable);
-				throw new ServiceException(warningNotAvailable);
+				logger.error(notAvailable);
+				throw new ServiceException(notAvailable);
 			}
 
 		} 
@@ -78,8 +81,10 @@ public class RentalService implements IRentalService
 		logger.info("Exit: rentDVD");
 	}
 
+	/* (non-Javadoc)
+	 * @see com.ongres.dvdrentalstore.service.IRentalService#returnDVD(java.lang.Integer, java.lang.String)
+	 */
 	@Override
-	@Transactional
 	public void returnDVD(Integer customerID, String title) throws ServiceException
 	{
 		logger.info("Enter: returnDVD");

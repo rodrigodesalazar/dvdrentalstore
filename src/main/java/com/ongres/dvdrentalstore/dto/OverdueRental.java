@@ -37,4 +37,10 @@ public class OverdueRental
 	{
 		this.title = title;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "OverdueRental [customer=" + customer + ", phone=" + phone + ", title=" + title + "]";
+	}
 }

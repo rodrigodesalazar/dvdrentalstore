@@ -30,6 +30,15 @@ public class RentalDAO
 	@Value("${database.url}")
 	private String url;
 
+	/**
+	 * Returns a list of the inventory ids of the copies of a certain film.
+	 * There can be several copies at a store.
+	 * 
+	 * @param customerID the id of the customer.
+	 * @param title the title of the film.
+	 * @return a list of the inventory ids of the film.
+	 * @throws DAOException if anything goes wrong.
+	 */
 	public List<Integer> getInventoryIDs(Integer customerID, String title) throws DAOException
 	{
 		logger.info("Enter: getInventoryIDs");
@@ -41,7 +50,7 @@ public class RentalDAO
 		
 		try
 		{
-			StringBuilder query = new StringBuilder(
+			String query = new String(
 					"SELECT i.inventory_id AS inventoryid FROM inventory as i "
 					+ "JOIN store AS s USING (store_id) "
 					+ "JOIN customer as c USING (store_id) "
@@ -50,7 +59,7 @@ public class RentalDAO
 								
 			connection = DriverManager.getConnection(url, username, password);
 			
-			PreparedStatement statement = connection.prepareStatement(query.toString());
+			PreparedStatement statement = connection.prepareStatement(query);
 			statement.setInt(1, customerID);
 			statement.setString(2, title);
 						
@@ -86,6 +95,13 @@ public class RentalDAO
 		return inventoryIDs;
 	}
 	
+	/**
+	 * Checks whether a certain copy of a film is available or not.
+	 * 
+	 * @param inventoryID the inventory id of the film.
+	 * @return true if the copy is available, false otherwise.
+	 * @throws DAOException if anything goes wrong.
+	 */
 	public Boolean isAvailable(Integer inventoryID) throws DAOException
 	{
 		logger.info("Enter: isAvailable");
@@ -96,12 +112,12 @@ public class RentalDAO
 		
 		try
 		{
-			StringBuilder query = new StringBuilder(
+			String query = new String(
 					"SELECT inventory_in_stock(?) AS available");
 								
 			connection = DriverManager.getConnection(url, username, password);
 			
-			PreparedStatement statement = connection.prepareStatement(query.toString());
+			PreparedStatement statement = connection.prepareStatement(query);
 			statement.setInt(1, inventoryID);
 						
 			ResultSet resultSet = statement.executeQuery();
@@ -135,42 +151,49 @@ public class RentalDAO
 		return available;
 	}
 	
-	public Integer registerRental(Integer customerID, String staffName, Integer inventoryID) throws DAOException
+	/**
+	 * Make the insertions corresponding to the rental of a DVD.
+	 * 
+	 * @param customerID the id of the customer.
+	 * @param staffName name of the store clerk serving the customer. 
+	 * @param inventoryID the inventory id of the film.
+	 * @throws DAOException if anything goes wrong.
+	 */
+	public void registerRentalAndPayment(Integer customerID, String staffName, Integer inventoryID) throws DAOException
 	{
-		logger.info("Enter: registerRental");
+		logger.info("Enter: registerRentalAndPayment");
 		logger.info("customerID: " + customerID);
 		logger.info("staffName: " + staffName);
 		logger.info("inventoryID: " + inventoryID);
 		
 		Connection connection = null;
-		Integer rentalID = null;
 		
 		try
 		{
 			connection = DriverManager.getConnection(url, username, password);
+			connection.setAutoCommit(false);
 			
 			Integer staffID = getStaffID(connection, customerID, staffName);
 			
-			StringBuilder query = new StringBuilder(
-					"INSERT INTO rental "
-					+ "(rental_date, customer_id, staff_id, inventory_id) "
-					+ "VALUES (NOW(), ?, ?, ?) RETURNING rental_id AS rentalid");
+			Integer rentalID = registerRental(connection, customerID, staffID, inventoryID);
+
+			Double customerBalance = getCustomerBalance(connection, customerID);
+
+			registerPayment(connection, customerID, staffID, rentalID, customerBalance);
 			
-			PreparedStatement statement = connection.prepareStatement(query.toString());
-			statement.setInt(1, customerID);
-			statement.setInt(2, staffID);
-			statement.setInt(3, inventoryID);
-						
-			ResultSet resultSet = statement.executeQuery();
-			
-			resultSet.next();
-			
-			rentalID = resultSet.getInt("rentalid");
-			
-			connection.close();
+			connection.commit();
 		} 
 		catch (SQLException e)
 		{
+			try
+			{
+				connection.rollback();
+			}
+			catch (SQLException f)
+			{
+				logger.error(ExceptionUtils.getStackTrace(f));
+				throw new DAOException(f.getMessage());
+			}
 			logger.error(ExceptionUtils.getStackTrace(e));
 			throw new DAOException(e.getMessage());
 		}
@@ -187,140 +210,161 @@ public class RentalDAO
 			}
 		}
 
-		logger.info("Exit: registerRental");
-		logger.info("rentalID: " + rentalID);
-		return rentalID;
+		logger.info("Exit: registerRentalAndPayment");
 	}
 	
-	// Assuming unique name per store
+	/**
+	 * Returns the staff id of a store clerk.
+	 * We assume that there are no two clerks with the same name in the same store,
+	 * as that would return several results and we would just get the first one,
+	 * we couldn't decide which one it is with the input we have. 
+	 * Besides, I checked and there are no duplicates ;)
+	 * 
+	 * @param connection database connection.
+	 * @param customerID the id of the customer.
+	 * @param staffName name of the store clerk serving the customer. 
+	 * @return the staff id of the clerk.
+	 * @throws SQLException if anything goes wrong.
+	 */
 	private Integer getStaffID(Connection connection, Integer customerID, String staffName) throws SQLException
 	{
 		logger.info("Enter: getStaffID");
 		logger.info("customerID: " + customerID);
 		logger.info("staffName: " + staffName);
-		
+
 		StringBuilder rentalIDQuery = new StringBuilder(
 				"SELECT sta.staff_id AS staffid FROM staff AS sta "
-				+ "JOIN store AS sto USING (store_id) "
-				+ "JOIN customer as c USING (store_id) "
-				+ "WHERE c.customer_id=? AND sta.first_name||' '||sta.last_name=?");
-										
+						+ "JOIN store AS sto USING (store_id) "
+						+ "JOIN customer as c USING (store_id) "
+						+ "WHERE c.customer_id=? AND sta.first_name||' '||sta.last_name=?");
+
 		PreparedStatement statement = connection.prepareStatement(rentalIDQuery.toString());
 		statement.setInt(1, customerID);
 		statement.setString(2, staffName);
-			
+
 		ResultSet resultSet = statement.executeQuery();
 		resultSet.next();
 		Integer staffID = resultSet.getInt("staffid");
-		
+
 		logger.info("Exit: getStaffID");
 		logger.info("staffID: " + staffID);
 		return staffID;
 	}
+	
+	/**
+	 * Inserts a record in the rental table.
+	 * 
+	 * @param connection database connection.
+	 * @param customerID the id of the customer.
+	 * @param staffID the staff id of the clerk. 
+	 * @param inventoryID the inventory id of the film.
+	 * @return the rental id of the insert.
+	 * @throws SQLException if anything goes wrong.
+	 */
+	private Integer registerRental(Connection connection, Integer customerID, Integer staffID, Integer inventoryID) throws SQLException
+	{
+		logger.info("Enter: registerRental");
+		logger.info("customerID: " + customerID);
+		logger.info("staffID: " + staffID);
+		logger.info("inventoryID: " + inventoryID);
+			
+		String query = new String(
+				"INSERT INTO rental "
+				+ "(rental_date, customer_id, staff_id, inventory_id) "
+				+ "VALUES (NOW(), ?, ?, ?) RETURNING rental_id AS rentalid");
+			
+		PreparedStatement statement = connection.prepareStatement(query);
+		statement.setInt(1, customerID);
+		statement.setInt(2, staffID);
+		statement.setInt(3, inventoryID);
+						
+		ResultSet resultSet = statement.executeQuery();
+		
+		resultSet.next();
+			
+		Integer rentalID = resultSet.getInt("rentalid");
+			
+		logger.info("Exit: registerRental");
+		logger.info("rentalID: " + rentalID);
+		return rentalID;
+	}
 
-	public Double getCustomerBalance(Integer customerID) throws DAOException
+	/**
+	 * Returns the balance of a customer.
+	 * 
+	 * @param connection database connection.
+	 * @param customerID the id of the customer.
+	 * @return balance of the customer.
+	 * @throws SQLException if anything goes wrong.
+	 */
+	private Double getCustomerBalance(Connection connection, Integer customerID) throws SQLException
 	{
 		logger.info("Enter: getCustomerBalance");
 		logger.info("customerID: " + customerID);
 		
-		Connection connection = null;
-		Double balance = null;
-		
-		try
-		{
-			StringBuilder query = new StringBuilder(
-					"SELECT get_customer_balance(?, LOCALTIMESTAMP) AS balance");
+		String query = new String(
+				"SELECT get_customer_balance(?, LOCALTIMESTAMP) AS balance");
 								
-			connection = DriverManager.getConnection(url, username, password);
-			
-			PreparedStatement statement = connection.prepareStatement(query.toString());
-			statement.setInt(1, customerID);
+		PreparedStatement statement = connection.prepareStatement(query);
+		statement.setInt(1, customerID);
 						
-			ResultSet resultSet = statement.executeQuery();
+		ResultSet resultSet = statement.executeQuery();
 			
-			resultSet.next();
+		resultSet.next();
 			
-			balance = resultSet.getDouble("balance");
+		Double balance = resultSet.getDouble("balance");
 			
-			connection.close();
-		} 
-		catch (SQLException e)
-		{
-			logger.error(ExceptionUtils.getStackTrace(e));
-			throw new DAOException(e.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				connection.close();
-			}
-			catch (SQLException e)
-			{
-				logger.error(ExceptionUtils.getStackTrace(e));
-				throw new DAOException(e.getMessage());
-			}
-		}
-
 		logger.info("Exit: getCustomerBalance");
 		logger.info("balance: " + balance);
 		return balance;
 	}
 
-	public void registerPayment(Integer customerID, String staffName, Integer rentalID, Double customerBalance) throws DAOException
+	/**
+	 * Inserts a record in the payment table.
+	 * 
+	 * @param connection database connection.
+	 * @param customerID the id of the customer.
+	 * @param staffID the staff id of the clerk. 
+	 * @param rentalID the rental id.
+	 * @param customerBalance balance of the customer.
+	 * @throws SQLException if anything goes wrong.
+	 */
+	private void registerPayment(Connection connection, Integer customerID, Integer staffID, Integer rentalID, Double customerBalance) throws SQLException
 	{
 		logger.info("Enter: registerPayment");
 		logger.info("customerID: " + customerID);
-		logger.info("staffName: " + staffName);
+		logger.info("staffID: " + staffID);
 		logger.info("rentalID: " + rentalID);
 		logger.info("customerBalance: " + customerBalance);
-		
-		Connection connection = null;
-				
-		try
-		{
-			connection = DriverManager.getConnection(url, username, password);
 			
-			Integer staffID = getStaffID(connection, customerID, staffName);
+		String query = new String(
+				"INSERT INTO payment "
+				+ "(customer_id, staff_id, rental_id, amount, payment_date) "
+				+ "VALUES (?, ?, ?, ?, NOW())");
 			
-			StringBuilder query = new StringBuilder(
-					"INSERT INTO payment "
-					+ "(customer_id, staff_id, rental_id, amount, payment_date) "
-					+ "VALUES (?, ?, ?, ?, NOW())");
-			
-			PreparedStatement statement = connection.prepareStatement(query.toString());
-			statement.setInt(1, customerID);
-			statement.setInt(2, staffID);
-			statement.setInt(3, rentalID);
-			statement.setDouble(4, customerBalance);
+		PreparedStatement statement = connection.prepareStatement(query.toString());
+		statement.setInt(1, customerID);
+		statement.setInt(2, staffID);
+		statement.setInt(3, rentalID);
+		statement.setDouble(4, customerBalance);
 						
-			Integer rowsUpdated = statement.executeUpdate();
+		Integer rowsUpdated = statement.executeUpdate();
 			
-			logger.info("rowsUpdated: " + rowsUpdated);
+		logger.info("rowsUpdated: " + rowsUpdated);	
 			
-			connection.close();
-		} 
-		catch (SQLException e)
-		{
-			logger.error(ExceptionUtils.getStackTrace(e));
-			throw new DAOException(e.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				connection.close();
-			}
-			catch (SQLException e)
-			{
-				logger.error(ExceptionUtils.getStackTrace(e));
-				throw new DAOException(e.getMessage());
-			}
-		}
 		logger.info("Exit: registerPayment");
 	}
 
-	// Assuming title=title_id
+	/**
+	 * Update the rental record with the return date of the DVD.
+	 * We assume that the titles are unique,
+	 * we can't decide which film we would be returning otherwise.
+	 * I also checked for this on the database :P
+	 * 
+	 * @param customerID the id of the customer.
+	 * @param title the title of the film.
+	 * @throws DAOException if anything goes wrong.
+	 */
 	public void updateRental(Integer customerID, String title) throws DAOException
 	{
 		logger.info("Enter: updateRental");
@@ -368,6 +412,17 @@ public class RentalDAO
 		logger.info("Exit: updateRental");
 	}
 	
+	/**
+	 * Return the rental id of the film.
+	 * We can't know which copy we are returning if we have rented several.
+	 * Will return the first one found.
+	 * 
+	 * @param connection database connection.
+	 * @param customerID the id of the customer.
+	 * @param title the title of the film.
+	 * @return the rental id.
+	 * @throws SQLException if anything goes wrong.
+	 */
 	private Integer getRentalID(Connection connection, Integer customerID, String title) throws SQLException
 	{
 		logger.info("Enter: getRentalID");

@@ -21,4 +21,10 @@ public class GenericResponse
 	public void setBody(Object body) {
 		this.body = body;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "GenericResponse [status=" + status + ", body=" + body + "]";
+	}
 }

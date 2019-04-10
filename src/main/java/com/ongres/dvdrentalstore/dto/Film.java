@@ -49,4 +49,10 @@ public class Film
 	{
 		this.categoryName = categoryName;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "Film [actor=" + actor + ", title=" + title + ", description=" + description + ", categoryName=" + categoryName + "]";
+	}
 }

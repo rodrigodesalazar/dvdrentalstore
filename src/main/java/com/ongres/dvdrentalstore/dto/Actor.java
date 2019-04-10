@@ -25,4 +25,10 @@ public class Actor
 	{
 		this.lastName = lastName;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "Actor [firstName=" + firstName + ", lastName=" + lastName + "]";
+	}
 }
