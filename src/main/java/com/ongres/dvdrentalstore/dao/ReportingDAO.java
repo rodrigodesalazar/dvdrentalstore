@@ -61,7 +61,7 @@ public class ReportingDAO
 					+ "JOIN address AS a USING (address_id) "
 					+ "JOIN city AS ci USING (city_id) "
 					+ "JOIN country AS co USING (country_id) WHERE upper(co.country)=?");
-			if (city != null)
+			if (city != null && !city.trim().isEmpty())
 			{
 				query.append(" and upper(ci.city)=?");
 			}

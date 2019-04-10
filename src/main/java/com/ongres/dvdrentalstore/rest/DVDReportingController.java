@@ -47,8 +47,8 @@ public class DVDReportingController
 	public GenericResponse clientsByCountryGET(@RequestParam(value = "country") String country, @RequestParam(value = "city", required = false) String city)
 	{
 		logger.info("Enter: clientsByCountryGET");
-		logger.debug("country: " + country);
-		logger.debug("city: " + city);
+		logger.info("country: " + country);
+		logger.info("city: " + city);
 		
 		GenericResponse response = new GenericResponse();
 		
@@ -86,8 +86,8 @@ public class DVDReportingController
 	public GenericResponse filmsByActorGET(@RequestParam(value = "actor") String actor, @RequestParam(value = "category", required = false) String category)
 	{
 		logger.info("Enter: filmsByActorGET");
-		logger.debug("actor: " + actor);
-		logger.debug("category: " + category);
+		logger.info("actor: " + actor);
+		logger.info("category: " + category);
 		
 		GenericResponse response = new GenericResponse();
 		

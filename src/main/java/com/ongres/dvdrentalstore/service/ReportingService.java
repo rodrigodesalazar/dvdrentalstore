@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.ongres.dvdrentalstore.dao.ReportingDAO;
@@ -27,9 +28,12 @@ public class ReportingService implements IReportingService
 {
 	private static final Logger logger = LoggerFactory.getLogger(ReportingService.class);
 	
+	@Value("${error.incorrectParameters}")
+	private String incorrectParameters;
+	
 	@Autowired
 	private ReportingDAO reportingDAO;
-
+	
 	/* (non-Javadoc)
 	 * @see com.ongres.dvdrentalstore.service.IReportingService#clientsByCountry(java.lang.String, java.lang.String)
 	 */
@@ -39,6 +43,12 @@ public class ReportingService implements IReportingService
 		logger.info("Enter: clientsByCountry");
 		logger.info("country: " + country);
 		logger.info("city: " + city);
+		
+		if (country == null || country.trim().isEmpty())
+		{
+			logger.error(incorrectParameters);
+			throw new ServiceException(incorrectParameters);
+		}
 		
 		ClientCount clientCount = new ClientCount();
 
@@ -68,6 +78,12 @@ public class ReportingService implements IReportingService
 		logger.info("actor: " + actor);
 		logger.info("category: " + category);
 		
+		if (actor == null || actor.trim().isEmpty())
+		{
+			logger.error(incorrectParameters);
+			throw new ServiceException(incorrectParameters);
+		}
+		
 		List<Film> filmsByActor = new ArrayList<Film>();
 		
 		try 
@@ -79,7 +95,7 @@ public class ReportingService implements IReportingService
 			throw new ServiceException(e.getMessage());
 		}
 
-		if (category != null)
+		if (category != null && !category.trim().isEmpty())
 		{
 			filmsByActor = filmsByActor.stream().filter(x -> category.toUpperCase().equals(x.getCategoryName().toUpperCase())).collect(Collectors.toList());
 		}
