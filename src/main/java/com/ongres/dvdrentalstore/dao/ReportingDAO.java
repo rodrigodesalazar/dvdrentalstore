@@ -68,7 +68,7 @@ public class ReportingDAO
 			
 			PreparedStatement statement = connection.prepareStatement(query.toString());
 			statement.setString(1, country.toUpperCase());
-			if (city != null)
+			if (city != null && !city.trim().isEmpty())
 			{
 				statement.setString(2, city.toUpperCase());
 			}
