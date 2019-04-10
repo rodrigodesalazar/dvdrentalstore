@@ -5,7 +5,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,9 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
-
-import com.ongres.dvdrentalstore.dto.OverdueRental;
-import com.ongres.dvdrentalstore.rest.DVDRentalController;
 
 @Repository
 public class RentalDAO
@@ -126,16 +122,75 @@ public class RentalDAO
 		return available;
 	}
 
-	public Integer getStaffID(String staffName)
+	private Integer getStaffID(Connection connection, Integer customerID, String staffName) throws SQLException
 	{
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder rentalIDQuery = new StringBuilder(
+				"SELECT sta.staff_id AS staffid FROM staff AS sta "
+				+ "JOIN store AS sto USING (store_id) "
+				+ "JOIN customer as c USING (store_id) "
+				+ "WHERE c.customer_id=? AND sta.first_name||' '||sta.last_name=?");
+										
+		PreparedStatement statement = connection.prepareStatement(rentalIDQuery.toString());
+		statement.setInt(1, customerID);
+		statement.setString(2, staffName);
+		
+		ResultSet resultSet = statement.executeQuery();
+		resultSet.next();
+		Integer staffID = resultSet.getInt("staffid");
+		
+		return staffID;
 	}
 
+	// Assuming staffName=staff_id
 	public Integer rentDVD(Integer customerID, String staffName, Integer inventoryID)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		Connection connection = null;
+		Integer rentalID = null;
+		
+		try
+		{
+			connection = DriverManager.getConnection(url, username, password);
+			
+			Integer staffID = getStaffID(connection, customerID, staffName);
+			
+			StringBuilder query = new StringBuilder(
+					"INSERT INTO rental "
+					+ "(rental_date, customer_id, staff_id, inventory_id) "
+					+ "VALUES (NOW(), ?, ?, ?) RETURNING rental_id AS rentalid");
+			
+			PreparedStatement statement = connection.prepareStatement(query.toString());
+			statement.setInt(1, customerID);
+			statement.setInt(2, staffID);
+			statement.setInt(3, inventoryID);
+						
+			ResultSet resultSet = statement.executeQuery();
+			
+			resultSet.next();
+			
+			rentalID = resultSet.getInt("rentalid");
+			
+			connection.close();
+		} 
+		catch (SQLException e)
+		{
+			
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				connection.close();
+			}
+			catch (SQLException e)
+			{
+				
+				e.printStackTrace();
+			}
+		}
+
+		logger.info("rentalID: " + rentalID);
+		return rentalID;
 	}
 
 	public Double getCustomerBalance(Integer customerID)
@@ -184,8 +239,48 @@ public class RentalDAO
 
 	public void registerBalance(Integer customerID, String staffName, Integer rentalID, Double customerBalance)
 	{
-		// TODO Auto-generated method stub
-
+		Connection connection = null;
+				
+		try
+		{
+			connection = DriverManager.getConnection(url, username, password);
+			
+			Integer staffID = getStaffID(connection, customerID, staffName);
+			
+			StringBuilder query = new StringBuilder(
+					"INSERT INTO payment "
+					+ "(customer_id, staff_id, rental_id, amount, payment_date) "
+					+ "VALUES (?, ?, ?, ?, NOW())");
+			
+			PreparedStatement statement = connection.prepareStatement(query.toString());
+			statement.setInt(1, customerID);
+			statement.setInt(2, staffID);
+			statement.setInt(3, rentalID);
+			statement.setDouble(4, customerBalance);
+						
+			Integer rowsUpdated = statement.executeUpdate();
+			
+			logger.info("rowsUpdated: " + rowsUpdated);
+			
+			connection.close();
+		} 
+		catch (SQLException e)
+		{
+			
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				connection.close();
+			}
+			catch (SQLException e)
+			{
+				
+				e.printStackTrace();
+			}
+		}
 	}
 
 	// Assuming title=title_id
@@ -219,6 +314,8 @@ public class RentalDAO
 			statement.setInt(1, rentalID);
 			
 			Integer rowsUpdated = statement.executeUpdate();
+			
+			logger.info("rowsUpdated: " + rowsUpdated);
 			
 			connection.close();
 		} 
