@@ -82,8 +82,6 @@ public class ReportingDAO
 			ResultSet resultSet = statement.executeQuery();
 			resultSet.next();
 			numberOfClients = resultSet.getInt("clients");
-			
-			connection.close();
 		} 
 		catch (SQLException e)
 		{
@@ -94,7 +92,10 @@ public class ReportingDAO
 		{
 			try
 			{
-				connection.close();
+				if (connection != null)
+				{
+					connection.close();
+				}
 			}
 			catch (SQLException e)
 			{
@@ -160,8 +161,6 @@ public class ReportingDAO
 				
 				filmsByActor.add(filmByActor);
 			}
-			
-			connection.close();
 		} 
 		catch (SQLException e)
 		{
@@ -172,7 +171,10 @@ public class ReportingDAO
 		{
 			try
 			{
-				connection.close();
+				if (connection != null)
+				{
+					connection.close();
+				}
 			}
 			catch (SQLException e)
 			{
@@ -225,8 +227,6 @@ public class ReportingDAO
 							
 				overdueRentals.add(overdueRental);
 			}
-			
-			connection.close();
 		} 
 		catch (SQLException e)
 		{
@@ -237,7 +237,10 @@ public class ReportingDAO
 		{
 			try
 			{
-				connection.close();
+				if (connection != null)
+				{
+					connection.close();
+				}
 			}
 			catch (SQLException e)
 			{

@@ -75,8 +75,6 @@ public class RentalDAO
 			{			
 				inventoryIDs.add(resultSet.getInt("inventoryid"));
 			}
-			
-			connection.close();
 		} 
 		catch (SQLException e)
 		{
@@ -87,7 +85,10 @@ public class RentalDAO
 		{
 			try
 			{
-				connection.close();
+				if (connection != null)
+				{
+					connection.close();
+				}
 			}
 			catch (SQLException e)
 			{
@@ -131,8 +132,6 @@ public class RentalDAO
 			resultSet.next();
 			
 			available = resultSet.getBoolean("available");
-			
-			connection.close();
 		} 
 		catch (SQLException e)
 		{
@@ -143,7 +142,10 @@ public class RentalDAO
 		{
 			try
 			{
-				connection.close();
+				if (connection != null)
+				{
+					connection.close();
+				}
 			}
 			catch (SQLException e)
 			{
@@ -193,7 +195,10 @@ public class RentalDAO
 		{
 			try
 			{
-				connection.rollback();
+				if (connection != null)
+				{
+					connection.rollback();
+				}
 			}
 			catch (SQLException f)
 			{
@@ -207,7 +212,10 @@ public class RentalDAO
 		{
 			try
 			{
-				connection.close();
+				if (connection != null)
+				{
+					connection.close();
+				}
 			}
 			catch (SQLException e)
 			{
@@ -395,8 +403,6 @@ public class RentalDAO
 			Integer rowsUpdated = statement.executeUpdate();
 			
 			logger.info("rowsUpdated: " + rowsUpdated);
-			
-			connection.close();
 		} 
 		catch (SQLException e)
 		{
@@ -407,7 +413,10 @@ public class RentalDAO
 		{
 			try
 			{
-				connection.close();
+				if (connection != null)
+				{
+					connection.close();
+				}
 			}
 			catch (SQLException e)
 			{

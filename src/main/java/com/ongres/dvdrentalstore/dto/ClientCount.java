@@ -3,6 +3,11 @@ package com.ongres.dvdrentalstore.dto;
 public class ClientCount
 {
 	private Integer numberOfClients;
+	
+	public ClientCount(Integer numberOfClients)
+	{
+		this.numberOfClients = numberOfClients;
+	}
 
 	public Integer getNumberOfClients()
 	{

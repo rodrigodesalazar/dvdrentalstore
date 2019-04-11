@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.ongres.dvdrentalstore.dao.RentalDAO;
 import com.ongres.dvdrentalstore.exception.DAOException;
+import com.ongres.dvdrentalstore.exception.DAORuntimeException;
 import com.ongres.dvdrentalstore.exception.ServiceException;
 
 /**
@@ -44,7 +45,7 @@ public class RentalService implements IRentalService
 		logger.info("staffName: " + staffName);
 		logger.info("title: " + title);
 		
-		if (customerID == null || staffName == null || title == null)
+		if (customerID == null || staffName == null || staffName.trim().isEmpty() || title == null || title.trim().isEmpty())
 		{
 			logger.error(incorrectParameters);
 			throw new ServiceException(incorrectParameters);
@@ -59,7 +60,7 @@ public class RentalService implements IRentalService
 
 			Optional<Integer> inventoryID = inventoryIDs.stream().filter(x -> {
 					try { return rentalDAO.isAvailable(x); } 
-					catch (DAOException e) { throw new RuntimeException(e.getMessage()); }
+					catch (DAOException e) { throw new DAORuntimeException(e.getMessage()); }
 				}).findFirst();
 
 			if (inventoryID.isPresent())
@@ -77,6 +78,11 @@ public class RentalService implements IRentalService
 		{
 			throw new ServiceException(e.getMessage());
 		}
+		catch (DAORuntimeException e)
+		{
+			logger.error(e.getMessage());
+			throw new ServiceException(e.getMessage());
+		}
 		
 		logger.info("Exit: rentDVD");
 	}
@@ -91,7 +97,7 @@ public class RentalService implements IRentalService
 		logger.info("customerID: " + customerID);
 		logger.info("title: " + title);
 		
-		if (customerID == null || title == null)
+		if (customerID == null || title == null || title.trim().isEmpty())
 		{
 			logger.error(incorrectParameters);
 			throw new ServiceException(incorrectParameters);

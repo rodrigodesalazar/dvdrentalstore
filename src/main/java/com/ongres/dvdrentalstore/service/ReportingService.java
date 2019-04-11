@@ -50,11 +50,11 @@ public class ReportingService implements IReportingService
 			throw new ServiceException(incorrectParameters);
 		}
 		
-		ClientCount clientCount = new ClientCount();
+		ClientCount clientCount = null;
 
 		try 
 		{
-			clientCount.setNumberOfClients(reportingDAO.getClientsByCountry(country, city));
+			clientCount = new ClientCount(reportingDAO.getClientsByCountry(country, city));
 		}
 		catch (DAOException e)
 		{

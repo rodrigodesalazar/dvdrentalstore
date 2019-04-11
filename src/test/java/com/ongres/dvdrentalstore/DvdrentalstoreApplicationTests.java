@@ -22,7 +22,7 @@ public class DvdrentalstoreApplicationTests
 	private DVDReportingController dvdReportingController;
 
 	@Test
-	public void contextLoads()
+	public void smokeTest()
 	{
 		assertThat(dvdRentalController).isNotNull();
 		assertThat(dvdReportingController).isNotNull();
