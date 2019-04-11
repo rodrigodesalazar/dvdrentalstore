@@ -1,0 +1,49 @@
+= DVD Rental Store documentation
+
+By default the service is running at http://localhost:8080
+
+What better than an example on how to use the API?
+
+== Renting a DVD:
+
+.request
+include::{snippets}/rental/rentDVD/http-request.adoc[]
+
+.response
+include::{snippets}/rental/rentDVD/http-response.adoc[]
+
+== Returning a DVD:
+
+.request
+include::{snippets}/rental/returnDVD/http-request.adoc[]
+
+.response
+include::{snippets}/rental/returnDVD/http-response.adoc[]
+
+== Getting number of clients belonging to a country:
+
+*Note:* the city is optional and can be ommited.
+
+.request
+include::{snippets}/reporting/clientsByCountry/http-request.adoc[]
+
+.response
+include::{snippets}/reporting/clientsByCountry/http-response.adoc[]
+
+== Getting films by a certain actor:
+
+*Note:* the category is optional and can be ommited.
+
+.request
+include::{snippets}/reporting/filmsByActor/http-request.adoc[]
+
+.response
+include::{snippets}/reporting/filmsByActor/http-response.adoc[]
+
+== Getting a list of overdue rentals:
+
+.request
+include::{snippets}/reporting/overdueRentals/http-request.adoc[]
+
+.response
+include::{snippets}/reporting/overdueRentals/http-response.adoc[]

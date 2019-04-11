@@ -39,13 +39,12 @@ public class ReportingServiceTest
 	{
 		Integer count = 10;
 		String country = "COUNTRY";
-		String city = null;
 		
-		Mockito.when(reportingDAO.getClientsByCountry(country, city)).thenReturn(count);
+		Mockito.when(reportingDAO.getClientsByCountry(country, null)).thenReturn(count);
 
 		try 
 		{
-			Assert.assertEquals(count, reportingService.clientsByCountry(country, city).getNumberOfClients());
+			Assert.assertEquals(count, reportingService.clientsByCountry(country, null).getNumberOfClients());
 		}
 		catch (ServiceException e) 
 		{
@@ -76,14 +75,13 @@ public class ReportingServiceTest
 	public void clientsByCountryError() throws DAOException
 	{
 		String country = "COUNTRY";
-		String city = null;
 		String errorMessage = "ERROR MESSAGE";
 		
-		Mockito.when(reportingDAO.getClientsByCountry(country, city)).thenThrow(new DAOException(errorMessage));
+		Mockito.when(reportingDAO.getClientsByCountry(country, null)).thenThrow(new DAOException(errorMessage));
 
 		try 
 		{
-			reportingService.clientsByCountry(country, city);
+			reportingService.clientsByCountry(country, null);
 			Assert.fail("The service should have failed.");
 		}
 		catch (ServiceException e) 
@@ -183,14 +181,13 @@ public class ReportingServiceTest
 	public void filmsByActorError() throws DAOException
 	{
 		String actor = "NAME";
-		String category = null;
 		String errorMessage = "ERROR MESSAGE";
 		
 		Mockito.when(reportingDAO.getFilmsByActor(actor)).thenThrow(new DAOException(errorMessage));
 
 		try 
 		{
-			reportingService.filmsByActor(actor, category);
+			reportingService.filmsByActor(actor, null);
 			Assert.fail("The service should have failed.");
 		}
 		catch (ServiceException e) 
@@ -227,7 +224,6 @@ public class ReportingServiceTest
 		overdueRental2.setCustomer("CUSTOMER2");
 		overdueRental2.setPhone("PHONE2");
 		overdueRental2.setTitle("TITLE2");
-		
 		List<OverdueRental> overdueRentals = Stream.of(overdueRental1, overdueRental2).collect(Collectors.toList());
 		
 		Mockito.when(reportingDAO.getOverdueRentals()).thenReturn(overdueRentals);
