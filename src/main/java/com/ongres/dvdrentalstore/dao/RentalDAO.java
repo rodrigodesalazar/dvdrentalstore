@@ -161,6 +161,8 @@ public class RentalDAO
 	
 	/**
 	 * Make the insertions corresponding to the rental of a DVD.
+	 * The fact that we are modifying two different tables in the same DAO
+	 * method could be interpreted as a violation of the single responsibility principle.
 	 * 
 	 * @param customerID the id of the customer.
 	 * @param staffName name of the store clerk serving the customer. 
