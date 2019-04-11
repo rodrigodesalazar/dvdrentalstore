@@ -35,6 +35,9 @@ public class RentalDAO
 
 	@Value("${database.url}")
 	private String url;
+	
+	@Value("${error.notRented}")
+	private String notRented;
 
 	/**
 	 * Returns a list of the inventory ids of the copies of a certain film.
@@ -439,8 +442,9 @@ public class RentalDAO
 	 * @param title the title of the film.
 	 * @return the rental id.
 	 * @throws SQLException if anything goes wrong.
+	 * @throws DAOException 
 	 */
-	private Integer getRentalID(Connection connection, Integer customerID, String title) throws SQLException
+	private Integer getRentalID(Connection connection, Integer customerID, String title) throws SQLException, DAOException
 	{
 		logger.info("Enter: getRentalID");
 		logger.info("customerID: " + customerID);
@@ -450,14 +454,18 @@ public class RentalDAO
 				"SELECT r.rental_id AS rentalid FROM rental AS r "
 				+ "JOIN inventory AS i USING (inventory_id) "
 				+ "JOIN film AS f USING (film_id) "
-				+ "WHERE r.customer_id=? AND f.title=?");
+				+ "WHERE r.customer_id=? AND f.title=? AND return_date IS NULL");
 											
 		PreparedStatement statement = connection.prepareStatement(query.toString());
 		statement.setInt(1, customerID);
 		statement.setString(2, title);
 		
 		ResultSet resultSet = statement.executeQuery();
-		resultSet.next();
+		if (!resultSet.next())
+		{
+			logger.error(notRented);
+			throw new DAOException(notRented);
+		}
 		Integer rentalID = resultSet.getInt("rentalid");
 		
 		logger.info("Exit: getRentalID");
